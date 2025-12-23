@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Employee Management System</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>Employee Management System</h2>
+
+  <div class="form-group">
+    <input id="name" placeholder="Name">
+    <input id="position" placeholder="Position">
+    <input id="salary" type="number" placeholder="Salary">
+    <button onclick="addEmployee()">Add Employee</button>
+    <br>
+    <input id="search" placeholder="Search by name" oninput="loadEmployees()">
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Position</th>
+        <th>Salary</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="employee-list"></tbody>
+  </table>
+
+  <div class="dashboard">
+    <div>Total Employees: <span id="total-employees">0</span></div>
+    <div>Total Salary: ₹<span id="total-salary">0</span></div>
+  </div>
+</div>
+
+<!-- ✅ Load JS AFTER HTML -->
+<script src="./script.js"></script>
+</body>
+</html>
