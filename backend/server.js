@@ -18,33 +18,23 @@ const EmployeeSchema = new mongoose.Schema({
 
 const Employee = mongoose.model("Employee", EmployeeSchema);
 
+// ✅ TEST ROUTE (VERY IMPORTANT)
+app.get("/", (req, res) => {
+  res.send("Backend is running");
+});
+
 // ✅ GET employees
 app.get("/employees", async (req, res) => {
-  const search = req.query.search || "";
-  const employees = await Employee.find({
-    name: { $regex: search, $options: "i" }
-  });
+  const employees = await Employee.find();
   res.json(employees);
 });
 
-// ✅ ADD employee
+// ✅ POST employee
 app.post("/employees", async (req, res) => {
   const emp = new Employee(req.body);
   await emp.save();
   res.json(emp);
 });
 
-// ✅ UPDATE employee
-app.put("/employees/:id", async (req, res) => {
-  await Employee.findByIdAndUpdate(req.params.id, req.body);
-  res.json({ success: true });
-});
-
-// ✅ DELETE employee
-app.delete("/employees/:id", async (req, res) => {
-  await Employee.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
-});
-
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Backend running on port", PORT));
+app.listen(PORT, () => console.log("Server running on", PORT));
