@@ -1,95 +1,53 @@
-const API_URL = "https://empmanage.onrender.com";
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
 
-/* ================= LOAD EMPLOYEES ================= */
-async function loadEmployees() {
-  try {
-    const search = document.getElementById("search")?.value || "";
+const app = express();
 
-    const res = await fetch(`${API_URL}/employees?search=${search}`);
-    if (!res.ok) throw new Error("Failed to fetch employees");
+app.use(cors());
+app.use(express.json());
 
-    const data = await res.json();
-    const tbody = document.getElementById("employee-list");
-    tbody.innerHTML = "";
-
-    let totalSalary = 0;
-
-    data.forEach(emp => {
-      totalSalary += Number(emp.salary || 0);
-
-      tbody.innerHTML += `
-        <tr>
-          <td><input id="name-${emp._id}" value="${emp.name}"></td>
-          <td><input id="position-${emp._id}" value="${emp.position}"></td>
-          <td><input id="salary-${emp._id}" type="number" value="${emp.salary}"></td>
-          <td>
-            <button onclick="updateEmployee('${emp._id}')">Update</button>
-            <button onclick="deleteEmployee('${emp._id}')">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
-
-    document.getElementById("total-employees").innerText = data.length;
-    document.getElementById("total-salary").innerText = totalSalary;
-
-  } catch (err) {
-    console.error(err);
-    alert("Error loading employees");
-  }
-}
-
-/* ================= ADD EMPLOYEE ================= */
-async function addEmployee() {
-  const name = document.getElementById("name").value.trim();
-  const position = document.getElementById("position").value.trim();
-  const salary = document.getElementById("salary").value;
-
-  if (!name || !position || !salary) {
-    alert("All fields required");
-    return;
-  }
-
-  await fetch(`${API_URL}/employees`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, position, salary })
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => {
+    console.error("❌ MongoDB error:", err.message);
+    process.exit(1);
   });
 
-  document.getElementById("name").value = "";
-  document.getElementById("position").value = "";
-  document.getElementById("salary").value = "";
+const EmployeeSchema = new mongoose.Schema({
+  name: String,
+  position: String,
+  salary: Number
+});
 
-  loadEmployees();
-}
+const Employee = mongoose.model("Employee", EmployeeSchema);
 
-/* ================= UPDATE EMPLOYEE ================= */
-async function updateEmployee(id) {
-  const emp = {
-    name: document.getElementById(`name-${id}`).value,
-    position: document.getElementById(`position-${id}`).value,
-    salary: document.getElementById(`salary-${id}`).value
-  };
+app.get("/", (req, res) => {
+  res.send("Backend running 🚀");
+});
 
-  await fetch(`${API_URL}/employees/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(emp)
+app.get("/employees", async (req, res) => {
+  const search = req.query.search || "";
+  const data = await Employee.find({
+    name: { $regex: search, $options: "i" }
   });
+  res.json(data);
+});
 
-  loadEmployees();
-}
+app.post("/employees", async (req, res) => {
+  const emp = await Employee.create(req.body);
+  res.json(emp);
+});
 
-/* ================= DELETE EMPLOYEE ================= */
-async function deleteEmployee(id) {
-  if (!confirm("Delete this employee?")) return;
+app.put("/employees/:id", async (req, res) => {
+  const emp = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.json(emp);
+});
 
-  await fetch(`${API_URL}/employees/${id}`, {
-    method: "DELETE"
-  });
+app.delete("/employees/:id", async (req, res) => {
+  await Employee.findByIdAndDelete(req.params.id);
+  res.json({ message: "Deleted" });
+});
 
-  loadEmployees();
-}
-
-/* ================= INITIAL LOAD ================= */
-loadEmployees();
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
