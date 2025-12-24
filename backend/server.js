@@ -1,119 +1,95 @@
-require("dotenv").config(); // ✅ add this
+const API_URL = "https://empmanage.onrender.com";
 
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-
-const app = express();
-
-/* ================== MIDDLEWARE ================== */
-app.use(cors());
-app.use(express.json());
-
-/* ================== MONGODB ================== */
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  console.error("❌ MONGODB_URI not found in environment variables");
-  process.exit(1);
-}
-
-mongoose
-  .connect(MONGODB_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch(err => {
-    console.error("❌ MongoDB connection error:", err.message);
-    process.exit(1);
-  });
-
-/* ================== SCHEMA ================== */
-const employeeSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true, trim: true },
-    position: { type: String, required: true, trim: true },
-    salary: { type: Number, required: true }
-  },
-  { timestamps: true }
-);
-
-const Employee = mongoose.model("Employee", employeeSchema);
-
-/* ================== ROUTES ================== */
-
-// Health check
-app.get("/", (req, res) => {
-  res.status(200).send("Employee Management Backend is Running 🚀");
-});
-
-// GET employees (with optional search)
-app.get("/employees", async (req, res) => {
+/* ================= LOAD EMPLOYEES ================= */
+async function loadEmployees() {
   try {
-    const search = req.query.search || "";
-    const employees = await Employee.find({
-      name: { $regex: search, $options: "i" }
+    const search = document.getElementById("search")?.value || "";
+
+    const res = await fetch(`${API_URL}/employees?search=${search}`);
+    if (!res.ok) throw new Error("Failed to fetch employees");
+
+    const data = await res.json();
+    const tbody = document.getElementById("employee-list");
+    tbody.innerHTML = "";
+
+    let totalSalary = 0;
+
+    data.forEach(emp => {
+      totalSalary += Number(emp.salary || 0);
+
+      tbody.innerHTML += `
+        <tr>
+          <td><input id="name-${emp._id}" value="${emp.name}"></td>
+          <td><input id="position-${emp._id}" value="${emp.position}"></td>
+          <td><input id="salary-${emp._id}" type="number" value="${emp.salary}"></td>
+          <td>
+            <button onclick="updateEmployee('${emp._id}')">Update</button>
+            <button onclick="deleteEmployee('${emp._id}')">Delete</button>
+          </td>
+        </tr>
+      `;
     });
 
-    res.json(employees);
+    document.getElementById("total-employees").innerText = data.length;
+    document.getElementById("total-salary").innerText = totalSalary;
+
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch employees" });
+    console.error(err);
+    alert("Error loading employees");
   }
-});
+}
 
-// ADD employee
-app.post("/employees", async (req, res) => {
-  try {
-    const { name, position, salary } = req.body;
+/* ================= ADD EMPLOYEE ================= */
+async function addEmployee() {
+  const name = document.getElementById("name").value.trim();
+  const position = document.getElementById("position").value.trim();
+  const salary = document.getElementById("salary").value;
 
-    if (!name || !position || salary === undefined) {
-      return res.status(400).json({ message: "All fields required" });
-    }
-
-    const employee = new Employee({ name, position, salary });
-    await employee.save();
-
-    res.status(201).json(employee);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to add employee" });
+  if (!name || !position || !salary) {
+    alert("All fields required");
+    return;
   }
-});
 
-// UPDATE employee
-app.put("/employees/:id", async (req, res) => {
-  try {
-    const updatedEmployee = await Employee.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+  await fetch(`${API_URL}/employees`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, position, salary })
+  });
 
-    if (!updatedEmployee) {
-      return res.status(404).json({ message: "Employee not found" });
-    }
+  document.getElementById("name").value = "";
+  document.getElementById("position").value = "";
+  document.getElementById("salary").value = "";
 
-    res.json(updatedEmployee);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to update employee" });
-  }
-});
+  loadEmployees();
+}
 
-// DELETE employee
-app.delete("/employees/:id", async (req, res) => {
-  try {
-    const deletedEmployee = await Employee.findByIdAndDelete(req.params.id);
+/* ================= UPDATE EMPLOYEE ================= */
+async function updateEmployee(id) {
+  const emp = {
+    name: document.getElementById(`name-${id}`).value,
+    position: document.getElementById(`position-${id}`).value,
+    salary: document.getElementById(`salary-${id}`).value
+  };
 
-    if (!deletedEmployee) {
-      return res.status(404).json({ message: "Employee not found" });
-    }
+  await fetch(`${API_URL}/employees/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(emp)
+  });
 
-    res.json({ message: "Employee deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: "Failed to delete employee" });
-  }
-});
+  loadEmployees();
+}
 
-/* ================== SERVER ================== */
-const PORT = process.env.PORT || 5000;
+/* ================= DELETE EMPLOYEE ================= */
+async function deleteEmployee(id) {
+  if (!confirm("Delete this employee?")) return;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Backend running on port ${PORT}`);
-});
+  await fetch(`${API_URL}/employees/${id}`, {
+    method: "DELETE"
+  });
+
+  loadEmployees();
+}
+
+/* ================= INITIAL LOAD ================= */
+loadEmployees();
