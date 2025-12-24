@@ -1,4 +1,4 @@
-const API = "https://empmanage.onrender.com/employees";
+const API = "https://empmanage.onrender.com/api/employees";
 
 /* =======================
    LOAD EMPLOYEES

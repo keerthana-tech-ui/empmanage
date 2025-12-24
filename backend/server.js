@@ -37,4 +37,7 @@ app.post("/employees", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 10000;
+app.get("/", (req, res) => {
+  res.send("Employee Management API is running 🚀");
+});
 app.listen(PORT, () => console.log("Server running on", PORT));
