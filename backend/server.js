@@ -1,3 +1,5 @@
+require("dotenv").config(); // ✅ add this
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -20,15 +22,15 @@ mongoose
   .connect(MONGODB_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch(err => {
-    console.error("❌ MongoDB connection error:", err);
+    console.error("❌ MongoDB connection error:", err.message);
     process.exit(1);
   });
 
 /* ================== SCHEMA ================== */
 const employeeSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    position: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    position: { type: String, required: true, trim: true },
     salary: { type: Number, required: true }
   },
   { timestamps: true }
@@ -50,6 +52,7 @@ app.get("/employees", async (req, res) => {
     const employees = await Employee.find({
       name: { $regex: search, $options: "i" }
     });
+
     res.json(employees);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch employees" });
@@ -61,7 +64,7 @@ app.post("/employees", async (req, res) => {
   try {
     const { name, position, salary } = req.body;
 
-    if (!name || !position || !salary) {
+    if (!name || !position || salary === undefined) {
       return res.status(400).json({ message: "All fields required" });
     }
 
@@ -80,7 +83,7 @@ app.put("/employees/:id", async (req, res) => {
     const updatedEmployee = await Employee.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     if (!updatedEmployee) {
@@ -110,6 +113,7 @@ app.delete("/employees/:id", async (req, res) => {
 
 /* ================== SERVER ================== */
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
-  console.log("Backend running on port " + PORT);
+  console.log(`🚀 Backend running on port ${PORT}`);
 });

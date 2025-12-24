@@ -1,9 +1,12 @@
+// ✅ Backend URL (Render)
+const API_URL = "https://empmanage.onrender.com/employees";
 
+// ================= LOAD EMPLOYEES =================
 async function loadEmployees() {
   try {
     const search = document.getElementById("search").value || "";
-    const res = await fetch(${API}?search=${search});
 
+    const res = await fetch(`${API_URL}?search=${search}`);
     if (!res.ok) throw new Error("Failed to fetch employees");
 
     const data = await res.json();
@@ -30,14 +33,13 @@ async function loadEmployees() {
 
     document.getElementById("total-employees").innerText = data.length;
     document.getElementById("total-salary").innerText = totalSalary;
-
   } catch (err) {
-    alert("Error loading employees");
     console.error(err);
+    alert("Error loading employees");
   }
 }
 
-// Add employee
+// ================= ADD EMPLOYEE =================
 async function addEmployee() {
   const name = document.getElementById("name").value.trim();
   const position = document.getElementById("position").value.trim();
@@ -48,7 +50,7 @@ async function addEmployee() {
     return;
   }
 
-  await fetch(API, {
+  await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, position, salary })
@@ -61,15 +63,15 @@ async function addEmployee() {
   loadEmployees();
 }
 
-// Update employee
+// ================= UPDATE EMPLOYEE =================
 async function updateEmployee(id) {
   const emp = {
-    name: document.getElementById(name-${id}).value,
-    position: document.getElementById(position-${id}).value,
-    salary: document.getElementById(salary-${id}).value
+    name: document.getElementById(`name-${id}`).value,
+    position: document.getElementById(`position-${id}`).value,
+    salary: document.getElementById(`salary-${id}`).value
   };
 
-  await fetch(${API}/${id}, {
+  await fetch(`${API_URL}/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(emp)
@@ -78,16 +80,16 @@ async function updateEmployee(id) {
   loadEmployees();
 }
 
-// Delete employee
+// ================= DELETE EMPLOYEE =================
 async function deleteEmployee(id) {
   if (!confirm("Delete this employee?")) return;
 
-  await fetch(${API}/${id}, {
+  await fetch(`${API_URL}/${id}`, {
     method: "DELETE"
   });
 
   loadEmployees();
 }
 
-// Initial load
+// ================= INITIAL LOAD =================
 loadEmployees();
