@@ -1,18 +1,11 @@
-const API = "https://empmanage.onrender.com/api/employees";
+const API = "https://empmanage.onrender.com/employees";
 
-/* =======================
-   LOAD EMPLOYEES
-======================= */
 async function loadEmployees() {
   try {
-    const searchInput = document.getElementById("search");
-    const search = searchInput ? searchInput.value.trim() : "";
-
-    const res = await fetch(`${API}?search=${search}`);
-    if (!res.ok) throw new Error("Failed to fetch employees");
+    const res = await fetch(API);
+    if (!res.ok) throw new Error("Fetch failed");
 
     const data = await res.json();
-
     const tbody = document.getElementById("employee-list");
     tbody.innerHTML = "";
 
@@ -23,9 +16,9 @@ async function loadEmployees() {
 
       tbody.innerHTML += `
         <tr>
-          <td><input id="name-${emp._id}" value="${emp.name}" /></td>
-          <td><input id="position-${emp._id}" value="${emp.position}" /></td>
-          <td><input id="salary-${emp._id}" type="number" value="${emp.salary}" /></td>
+          <td><input id="name-${emp._id}" value="${emp.name}"></td>
+          <td><input id="position-${emp._id}" value="${emp.position}"></td>
+          <td><input id="salary-${emp._id}" type="number" value="${emp.salary}"></td>
           <td>
             <button onclick="updateEmployee('${emp._id}')">Update</button>
             <button onclick="deleteEmployee('${emp._id}')">Delete</button>
@@ -42,9 +35,6 @@ async function loadEmployees() {
   }
 }
 
-/* =======================
-   ADD EMPLOYEE
-======================= */
 async function addEmployee() {
   try {
     const name = document.getElementById("name").value.trim();
@@ -52,7 +42,7 @@ async function addEmployee() {
     const salary = document.getElementById("salary").value;
 
     if (!name || !position || !salary) {
-      alert("All fields are required");
+      alert("All fields required");
       return;
     }
 
@@ -62,9 +52,8 @@ async function addEmployee() {
       body: JSON.stringify({ name, position, salary })
     });
 
-    if (!res.ok) throw new Error("Failed to add employee");
+    if (!res.ok) throw new Error("Add failed");
 
-    // Clear inputs
     document.getElementById("name").value = "";
     document.getElementById("position").value = "";
     document.getElementById("salary").value = "";
@@ -76,48 +65,23 @@ async function addEmployee() {
   }
 }
 
-/* =======================
-   UPDATE EMPLOYEE
-======================= */
 async function updateEmployee(id) {
-  try {
-    const res = await fetch(`${API}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: document.getElementById(`name-${id}`).value,
-        position: document.getElementById(`position-${id}`).value,
-        salary: document.getElementById(`salary-${id}`).value
-      })
-    });
+  await fetch(`${API}/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: document.getElementById(`name-${id}`).value,
+      position: document.getElementById(`position-${id}`).value,
+      salary: document.getElementById(`salary-${id}`).value
+    })
+  });
 
-    if (!res.ok) throw new Error("Failed to update employee");
-
-    loadEmployees();
-  } catch (err) {
-    console.error(err);
-    alert("Error updating employee");
-  }
+  loadEmployees();
 }
 
-/* =======================
-   DELETE EMPLOYEE
-======================= */
 async function deleteEmployee(id) {
-  try {
-    if (!confirm("Delete this employee?")) return;
-
-    const res = await fetch(`${API}/${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error("Failed to delete employee");
-
-    loadEmployees();
-  } catch (err) {
-    console.error(err);
-    alert("Error deleting employee");
-  }
+  await fetch(`${API}/${id}`, { method: "DELETE" });
+  loadEmployees();
 }
 
-/* =======================
-   INITIAL LOAD
-======================= */
 loadEmployees();
