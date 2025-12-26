@@ -1,88 +1,40 @@
-const API = "https://empmanage.onrender.com/backend/employees";
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
 
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-async function loadEmployees() {
-  try {
-    const res = await fetch(API);
-    if (!res.ok) throw new Error("Fetch failed");
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.error(err));
 
-    const data = await res.json();
-    const tbody = document.getElementById("employee-list");
-    tbody.innerHTML = "";
+const EmployeeSchema = new mongoose.Schema({
+  name: String,
+  position: String,
+  salary: Number
+});
 
-    let totalSalary = 0;
+const Employee = mongoose.model("Employee", EmployeeSchema);
 
-    data.forEach(emp => {
-      totalSalary += Number(emp.salary || 0);
+// Root test route
+app.get("/", (req, res) => {
+  res.send("Employee Management API is running 🚀");
+});
 
-      tbody.innerHTML += `
-        <tr>
-          <td><input id="name-${emp._id}" value="${emp.name}"></td>
-          <td><input id="position-${emp._id}" value="${emp.position}"></td>
-          <td><input id="salary-${emp._id}" type="number" value="${emp.salary}"></td>
-          <td>
-            <button onclick="updateEmployee('${emp._id}')">Update</button>
-            <button onclick="deleteEmployee('${emp._id}')">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
+// GET employees
+app.get("/employees", async (req, res) => {
+  const employees = await Employee.find();
+  res.json(employees);
+});
 
-    document.getElementById("total-employees").innerText = data.length;
-    document.getElementById("total-salary").innerText = totalSalary;
-  } catch (err) {
-    console.error(err);
-    alert("Error loading employees");
-  }
-}
+// POST employee
+app.post("/employees", async (req, res) => {
+  const emp = new Employee(req.body);
+  await emp.save();
+  res.json(emp);
+});
 
-async function addEmployee() {
-  try {
-    const name = document.getElementById("name").value.trim();
-    const position = document.getElementById("position").value.trim();
-    const salary = document.getElementById("salary").value;
-
-    if (!name || !position || !salary) {
-      alert("All fields required");
-      return;
-    }
-
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, position, salary })
-    });
-
-    if (!res.ok) throw new Error("Add failed");
-
-    document.getElementById("name").value = "";
-    document.getElementById("position").value = "";
-    document.getElementById("salary").value = "";
-
-    loadEmployees();
-  } catch (err) {
-    console.error(err);
-    alert("Error adding employee");
-  }
-}
-
-async function updateEmployee(id) {
-  await fetch(`${API}/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: document.getElementById(`name-${id}`).value,
-      position: document.getElementById(`position-${id}`).value,
-      salary: document.getElementById(`salary-${id}`).value
-    })
-  });
-
-  loadEmployees();
-}
-
-async function deleteEmployee(id) {
-  await fetch(`${API}/${id}`, { method: "DELETE" });
-  loadEmployees();
-}
-
-loadEmployees();
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log("Server running on", PORT));
