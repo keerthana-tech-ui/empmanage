@@ -18,35 +18,25 @@ const EmployeeSchema = new mongoose.Schema({
 
 const Employee = mongoose.model("Employee", EmployeeSchema);
 
-// Health check
+// test route
 app.get("/", (req, res) => {
-  res.send("Employee Management API is running 🚀");
+  res.send("Employee API running");
 });
 
-// GET employees
+// get employees
 app.get("/employees", async (req, res) => {
-  const employees = await Employee.find();
-  res.json(employees);
+  const data = await Employee.find();
+  res.json(data);
 });
 
-// POST employee
+// add employee
 app.post("/employees", async (req, res) => {
   const emp = new Employee(req.body);
   await emp.save();
   res.json(emp);
 });
 
-// UPDATE employee
-app.put("/employees/:id", async (req, res) => {
-  const emp = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(emp);
-});
-
-// DELETE employee
-app.delete("/employees/:id", async (req, res) => {
-  await Employee.findByIdAndDelete(req.params.id);
-  res.json({ message: "Deleted" });
-});
-
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Server running on", PORT));
+app.listen(PORT, () => {
+  console.log("Server running on port", PORT);
+});
